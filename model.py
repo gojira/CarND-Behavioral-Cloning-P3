@@ -12,36 +12,41 @@ import cv2
 import sklearn
 from sklearn.model_selection import train_test_split
 
-import keras
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten, Lambda
-from keras.layers import Conv2D, BatchNormalization, Cropping2D
-from keras.utils import np_utils
+# Suppress Tensorflow pending deprecation warnings
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=PendingDeprecationWarning)
+    warnings.simplefilter("ignore", category=DeprecationWarning)
+    import keras
+    from keras.models import Sequential
+    from keras.layers import Dense, Dropout, Activation, Flatten, Lambda
+    from keras.layers import Conv2D, BatchNormalization, Cropping2D
+    from keras.utils import np_utils
 
 
 def read_training_data(logfile, image_directory, steering_threshold, steering_correction, straight_steering_drop_prob): 
     """
-    Load training data from 'logfile'.
+    Load training data from 'logfile' in CarND simulator CSV format.
 
-    Prepend directory to the image file names in the input file.
-    Drop frames with steering value less than steering_threshold 
+    Prepend 'image_directory' to the image file names in the input file.
+    Drop frames with steering value less than 'steering_threshold'
     (too close to straight line driving) with probably given by 
-    straigh_steering_drop_prob.
-    For the left / right images, apply steering_correction.
-
-    File is CSV file in format of CarND simulator data.
-
+    'straigh_steering_drop_prob'.
+    For the left / right images, apply 'steering_correction'.
     """
     image_paths = []
     steering = []
 
     df = pd.read_csv(logfile)
     for _, row in df.iterrows():
-        # If steering angle is too close to zero, discard the frame with 90% probability
-        if abs(row['steering']) < steering_threshold and np.random.uniform() < straight_steering_drop_prob:
+        # If steering angle is too close to zero, discard 
+        # the frame with probability given by param
+        if (abs(row['steering']) < steering_threshold 
+            and np.random.uniform() < straight_steering_drop_prob):
             continue
 
-        # Add the 3 image paths - correct left right with steering_correction
+        # Add the 3 image paths and steering angles
+        # Correct left right steering with steering_correction
         image_paths.append(os.path.join(image_directory, row['center'].strip()))
         steering.append(row['steering'])
 
@@ -83,8 +88,7 @@ def make_model(args):
 
     model.add(Dense(1, kernel_regularizer=keras.regularizers.l2(0.001)))
 
-    # Use Adam optimizer
-    # Start with default params
+    # Use Adam optimizer with default params
     opt=keras.optimizers.Adam()
 
     # Use mean squared error loss for regression
@@ -100,6 +104,8 @@ def process_image(image, crop):
     1. Normalize
     2. Crop
     We do not resize - resizing degraded driving performance
+
+    This is used in both training and driving.
     """
     # Read the cropping params
     (top, bot, left, right) = crop
@@ -183,7 +189,7 @@ def do_run(args):
 
 def save_model_files(model, history, args):
     """
-    Save the model and other files
+    Save the model, history, parameters, and this file for each run.
     """
     if not os.path.exists(args.save_directory):
         os.mkdir(args.save_directory)
@@ -202,7 +208,7 @@ def plot_training_history(history_history):
     """
     Plot the Keras training history.
 
-    Input is Keras history.history dictionary (which can be pickled)
+    Input is Keras history.history dictionary
     """
     # Accuracy
     plt.figure(figsize=(10,5))
@@ -223,28 +229,4 @@ def plot_training_history(history_history):
     plt.xlabel('epoch')
     plt.legend(['train', 'validation'], loc='upper right')
     plt.show()
-
-
-def load_training_images(image_paths, args):
-    """
-    Load all image files into memory in cases where this is possible.
-    """
-    images = []
-    for file in image_paths:
-        image = cv2.imread(file)
-        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        processed_image = process_image(rgb_image, args.crop)
-        images.append(processed_image)
-    return images
-
-
-def test_model(model, image_paths, steering):
-    """
-    Compute model accuracy using image files and steering angles
-    """
-    images = load_training_images(image_paths)
-    X = np.array(images)
-    y = np.array(steering)
-    y_pred = model.predict(X)
-    return np.average(np.abs(y_pred - y))
 
