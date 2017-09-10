@@ -68,8 +68,8 @@ The model was tested by running it through the simulator and ensuring that the v
 
 Empirically, I found that generalization (dropout and regularization) was not needed 
 to enable the car to drive around track one successfully.  Generalization did help to 
-significantly smooth the driving by making the smoothing out the steering angles from 
-frame to frame. There is a significant difference observing the difference of
+improve the driving by smoothing out the steering from 
+frame to frame. There is a significant difference observing the smoothness of
 the driving with and without generalization.
 
 #### 3. Model parameter tuning
@@ -134,8 +134,8 @@ It has the architecture below.
 
 #### 3. Creation of the Training Set & Training Process
 
-I used the Udacity driving data.  I had a very difficult time driving the
-simulator with keyboard.  I eventually found that connecting and Xbox
+I used the Udacity driving data.  I had a difficult time driving the
+simulator with keyboard.  I eventually found that connecting an Xbox
 controller worked well. For the submission I used the Udacity data.
 
 An example image from the dataset is here:
@@ -148,11 +148,6 @@ to be converted to RGB format first before processing (which results
 in the image looking like above).
 
 ![alt text][image_bgr]
-
-
-I finally randomly shuffled the data set and put 20% of the data into a validation set. 
-
-I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was Z as evidenced by ... I used an adam optimizer so that manually training the learning rate wasn't necessary.
 
 For the training, I experimented with the following.
 
@@ -171,7 +166,8 @@ hyperparameters, and training data/approach.
 
 Generally speaking, with this project, I found that loss and accuracy were
 not completely correlated with driving performance.  First of all, the
-accuracy did not change very much, whether I changed model architecture, training 
+accuracy did not change very much, during training, and 
+whether I changed model architecture, training 
 epochs, or training images.  The accuracy was also not very different between
 trained models that stayed on course and those that went off course.
 
@@ -180,19 +176,21 @@ needed to stop training.  In general, 3-5 epochs were sufficient for training.
 I trained up to 20 epochs but more epochs did not result in better driving.
 
 ##### Training / Validation / Test
-I used standard ML approach of splitting data into training and validation
+
+I used standard approach of splitting data into training and validation
 sets.  As described above, with this project, accuracy was not a good
 indicator of driving performance, which is the actual objective criterion
 for success. The test "set" is actually running the model
 in the simulator using drive.py, and judging whether the car is able to
 drive around the track without going off track, as well as how fast it can go.
 
-I used 20% validation split.
+I shuffled the data set and used 20% validation split.
 
 ##### Activation functions
 I tried using Relu for convolutional layers and for the fully connected
-layers. The model worked best with Relu for the covolutional layers
-and non non-linearity introduced for the fully connected layers.
+layers. The model worked best with Relu for the covolutional layers.
+For the fully connected layers, the model performed best without non-linearity
+(i.e., no special activation function).
 
 ##### Image preprocessing
 For image preprocessing, I experimented with the following.
@@ -201,7 +199,7 @@ For image preprocessing, I experimented with the following.
 2. Cropping
 3. Resizing
 
-Since the model is used in the `drive.py` file, I had to modify `drive.py`
+Since the model is used in the `drive.py` file, I modified `drive.py`
 to apply the same image augmentation in the driving phase as training.
 
 All image preprocessing is done in the `process_image` function which is 
@@ -233,7 +231,7 @@ I filtered training examples based on how close to straight the steering
 angle is.  I discarded training examples (both image and steering angle)
 if the steering angle was less than a threshold, with a certain probability.
 
-This is when loading the training data in the `read_training_data`
+This is done when loading the training data in the `read_training_data`
 function.  The steering threshold, and drop probability are both 
 hyperparameters that I experimented with.
 
@@ -242,7 +240,7 @@ the drop probability.  i.e., I dropped a sample with 80% probability
 if the steering angle was less than 0.15.
 
 I also applied steering correction for the left and right images.  This
-was also a hyperparameter.  I chose 0.25 as the correction in the end
+was also a hyperparameter.  I chose `0.25` as the correction in the end
 and it worked well in practice.
 
 This dataset filtering helped a lot with reducing overfitting of the model.
